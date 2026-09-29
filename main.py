@@ -40,8 +40,8 @@ def _load_window_icons(ico_path):
     # 大图标：按系统大图标尺寸（通常 32×32）
     lg_cx = user32.GetSystemMetrics(11)  # SM_CXICON
     lg_cy = user32.GetSystemMetrics(12)  # SM_CYICON
-    _hIconSmall = user32.LoadImageW(        None, ico_path, IMAGE_ICON, sm_cx, sm_cy, LR_LOADFROMFILE    )
-    _hIconBig = user32.LoadImageW(        None, ico_path, IMAGE_ICON, lg_cx, lg_cy, LR_LOADFROMFILE    )
+    _hIconSmall = user32.LoadImageW(None, ico_path, IMAGE_ICON, sm_cx, sm_cy, LR_LOADFROMFILE    )
+    _hIconBig = user32.LoadImageW(None, ico_path, IMAGE_ICON, lg_cx, lg_cy, LR_LOADFROMFILE    )
     _icon_handles.extend([_hIconSmall, _hIconBig])
 
 from src.core.window import createWc, createWindow,enable_dpi_awareness,get_resource_path
@@ -97,10 +97,16 @@ def main():
         print(f"[App] 图标文件不存在：{ico_path}")
     win32gui.ShowWindow(hwnd,win32con.SW_SHOW)
     win32gui.UpdateWindow(hwnd)
-    webview = WebView2(hwnd)
+    webview = WebView2(hwnd,on_message=on_web_message)
     webview.init()
     webview.navigate("http://127.0.0.1:5173/")
 
     win32gui.PumpMessages()
+
+def on_web_message(msg: dict):
+    print("收到 JS 消息:", msg)
+    if msg.get("type") == "ready":
+        webview.post_json({"type": "hello", "data": "world"})
+        
 if __name__ == "__main__":
     main()

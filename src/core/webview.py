@@ -1,8 +1,8 @@
+import ctypes
+from ctypes import wintypes
+
 import os
 import sys
-import ctypes
-
-from ctypes import wintypes
 
 import comtypes
 from comtypes import GUID, HRESULT, IUnknown, COMMETHOD, POINTER, COMObject
@@ -47,7 +47,6 @@ class ICoreWebView2EnvironmentCompletedHandler(IUnknown):
 class ICoreWebView2Environment(IUnknown):
     _iid_ = GUID("{B96D755E-0319-4E92-A296-23436F46A1FC}")
     _methods_ = [
-        # 3
         COMMETHOD(
             [], HRESULT, "CreateCoreWebView2Controller",
             (["in"], wintypes.HWND, "parentWindow"),
@@ -59,25 +58,18 @@ class ICoreWebView2Environment(IUnknown):
 class ICoreWebView2Controller(IUnknown):
     _iid_ = GUID("{4D00C0D1-9434-4EB6-8078-8697A560334F}")
     _methods_ = [
-        # 3
         COMMETHOD([], HRESULT, "get_IsVisible",
                   (["out"], POINTER(wintypes.BOOL), "value")),
-        # 4
         COMMETHOD([], HRESULT, "put_IsVisible",
                   (["in"], wintypes.BOOL, "value")),
-        # 5
         COMMETHOD([], HRESULT, "get_Bounds",
                   (["out"], POINTER(wintypes.RECT), "value")),
-        # 6
         COMMETHOD([], HRESULT, "put_Bounds",
                   (["in"], POINTER(wintypes.RECT), "value")),
-        # 7
         COMMETHOD([], HRESULT, "get_ZoomFactor",
                   (["out"], POINTER(ctypes.c_double), "value")),
-        # 8
         COMMETHOD([], HRESULT, "put_ZoomFactor",
                   (["in"], ctypes.c_double, "value")),
-        # 9-24 之间的方法按官方 vtable 顺序补齐
         COMMETHOD([], HRESULT, "add_ZoomFactorChanged",
                   (["in"], POINTER(IUnknown), "handler"),
                   (["out"], POINTER(ctypes.c_int64), "token")),
@@ -108,19 +100,46 @@ class ICoreWebView2Controller(IUnknown):
                   (["out"], POINTER(ctypes.c_int64), "token")),
         COMMETHOD([], HRESULT, "remove_AcceleratorKeyPressed",
                   (["in"], ctypes.c_int64, "token")),
-        # 21
         COMMETHOD([], HRESULT, "get_ParentWindow",
                   (["out"], POINTER(wintypes.HWND), "value")),
-        # 22
         COMMETHOD([], HRESULT, "put_ParentWindow",
                   (["in"], wintypes.HWND, "value")),
-        # 23
         COMMETHOD([], HRESULT, "NotifyParentWindowPositionChanged"),
-        # 24
         COMMETHOD([], HRESULT, "Close"),
-        # 25
         COMMETHOD([], HRESULT, "get_CoreWebView2",
                   (["out"], POINTER(POINTER(IUnknown)), "value")),
+    ]
+
+
+# ---- 消息相关接口 ----
+
+class ICoreWebView2WebMessageReceivedEventArgs(IUnknown):
+    _iid_ = GUID("{0F99A40C-E962-4207-9E92-E3D542EFF849}")
+    _methods_ = [
+        COMMETHOD([], HRESULT, "get_Source",
+                  (["out"], POINTER(ctypes.c_wchar_p), "value")),
+        COMMETHOD([], HRESULT, "get_WebMessageAsJson",
+                  (["out"], POINTER(ctypes.c_wchar_p), "value")),
+        COMMETHOD([], HRESULT, "TryGetWebMessageAsString",
+                  (["out"], POINTER(ctypes.c_wchar_p), "value")),
+    ]
+
+
+class ICoreWebView2WebMessageReceivedEventHandler(IUnknown):
+    _iid_ = GUID("{57213F19-00E6-49FA-8E07-898EA01ECBD2}")
+    _methods_ = [
+        COMMETHOD([], HRESULT, "Invoke",
+                  (["in"], POINTER(IUnknown), "sender"),
+                  (["in"], POINTER(ICoreWebView2WebMessageReceivedEventArgs), "args")),
+    ]
+
+
+class ICoreWebView2ExecuteScriptCompletedHandler(IUnknown):
+    _iid_ = GUID("{49511172-CC67-4BCA-99A1-4BCCE1F8B0D4}")
+    _methods_ = [
+        COMMETHOD([], HRESULT, "Invoke",
+                  (["in"], HRESULT, "errorCode"),
+                  (["in"], ctypes.c_wchar_p, "resultObjectAsJson")),
     ]
 
 
@@ -139,32 +158,132 @@ class ICoreWebView2(IUnknown):
         # 6
         COMMETHOD([], HRESULT, "NavigateToString",
                   (["in"], ctypes.c_wchar_p, "htmlContent")),
+
+        # 7-26：官方事件方法占位（保持 vtable 对齐，暂不监听）
+        # 7  add_NavigationStarting
+        COMMETHOD([], HRESULT, "add_NavigationStarting",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 8  remove_NavigationStarting
+        COMMETHOD([], HRESULT, "remove_NavigationStarting",
+                  (["in"], ctypes.c_int64, "token")),
+        # 9  add_ContentLoading
+        COMMETHOD([], HRESULT, "add_ContentLoading",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 10 remove_ContentLoading
+        COMMETHOD([], HRESULT, "remove_ContentLoading",
+                  (["in"], ctypes.c_int64, "token")),
+        # 11 add_SourceChanged
+        COMMETHOD([], HRESULT, "add_SourceChanged",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 12 remove_SourceChanged
+        COMMETHOD([], HRESULT, "remove_SourceChanged",
+                  (["in"], ctypes.c_int64, "token")),
+        # 13 add_HistoryChanged
+        COMMETHOD([], HRESULT, "add_HistoryChanged",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 14 remove_HistoryChanged
+        COMMETHOD([], HRESULT, "remove_HistoryChanged",
+                  (["in"], ctypes.c_int64, "token")),
+        # 15 add_NavigationCompleted
+        COMMETHOD([], HRESULT, "add_NavigationCompleted",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 16 remove_NavigationCompleted
+        COMMETHOD([], HRESULT, "remove_NavigationCompleted",
+                  (["in"], ctypes.c_int64, "token")),
+        # 17 add_FrameNavigationStarting
+        COMMETHOD([], HRESULT, "add_FrameNavigationStarting",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 18 remove_FrameNavigationStarting
+        COMMETHOD([], HRESULT, "remove_FrameNavigationStarting",
+                  (["in"], ctypes.c_int64, "token")),
+        # 19 add_FrameNavigationCompleted
+        COMMETHOD([], HRESULT, "add_FrameNavigationCompleted",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 20 remove_FrameNavigationCompleted
+        COMMETHOD([], HRESULT, "remove_FrameNavigationCompleted",
+                  (["in"], ctypes.c_int64, "token")),
+        # 21 add_ScriptDialogOpening
+        COMMETHOD([], HRESULT, "add_ScriptDialogOpening",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 22 remove_ScriptDialogOpening
+        COMMETHOD([], HRESULT, "remove_ScriptDialogOpening",
+                  (["in"], ctypes.c_int64, "token")),
+        # 23 add_PermissionRequested
+        COMMETHOD([], HRESULT, "add_PermissionRequested",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 24 remove_PermissionRequested
+        COMMETHOD([], HRESULT, "remove_PermissionRequested",
+                  (["in"], ctypes.c_int64, "token")),
+        # 25 add_ProcessFailed
+        COMMETHOD([], HRESULT, "add_ProcessFailed",
+                  (["in"], POINTER(IUnknown), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 26 remove_ProcessFailed
+        COMMETHOD([], HRESULT, "remove_ProcessFailed",
+                  (["in"], ctypes.c_int64, "token")),
+
+        # 27 AddScriptToExecuteOnDocumentCreated
+        COMMETHOD([], HRESULT, "AddScriptToExecuteOnDocumentCreated",
+                  (["in"], ctypes.c_wchar_p, "javascript"),
+                  (["in"], POINTER(IUnknown), "handler")),
+        # 28 RemoveScriptToExecuteOnDocumentCreated
+        COMMETHOD([], HRESULT, "RemoveScriptToExecuteOnDocumentCreated",
+                  (["in"], ctypes.c_wchar_p, "id")),
+        # 29 ExecuteScript
+        COMMETHOD([], HRESULT, "ExecuteScript",
+                  (["in"], ctypes.c_wchar_p, "javascript"),
+                  (["in"], POINTER(IUnknown), "handler")),
+        # 30 CapturePreview
+        COMMETHOD([], HRESULT, "CapturePreview",
+                  (["in"], ctypes.c_int, "imageFormat"),
+                  (["in"], POINTER(IUnknown), "imageStream"),
+                  (["in"], POINTER(IUnknown), "handler")),
+        # 31 Reload
+        COMMETHOD([], HRESULT, "Reload"),
+        # 32 PostWebMessageAsJson
+        COMMETHOD([], HRESULT, "PostWebMessageAsJson",
+                  (["in"], ctypes.c_wchar_p, "webMessageAsJson")),
+        # 33 PostWebMessageAsString
+        COMMETHOD([], HRESULT, "PostWebMessageAsString",
+                  (["in"], ctypes.c_wchar_p, "webMessageAsString")),
+        # 34 add_WebMessageReceived
+        COMMETHOD([], HRESULT, "add_WebMessageReceived",
+                  (["in"], POINTER(ICoreWebView2WebMessageReceivedEventHandler), "handler"),
+                  (["out"], POINTER(ctypes.c_int64), "token")),
+        # 35 remove_WebMessageReceived
+        COMMETHOD([], HRESULT, "remove_WebMessageReceived",
+                  (["in"], ctypes.c_int64, "token")),
     ]
 
 
 # ============================================================
 # WebView2Loader
 # ============================================================
+
 def _get_search_dirs():
-    """返回应该搜索 WebView2Loader.dll 的目录列表（按优先级）。"""
     dirs = []
 
-    # 1. 环境变量指定的具体文件
     env = os.environ.get("WEBVIEW2_LOADER_PATH")
     if env:
         dirs.append(("file", env))
 
     if getattr(sys, "frozen", False):
-        # ★ onedir：exe 所在目录
         exe_dir = os.path.dirname(sys.executable)
         dirs.append(("dir", exe_dir))
-
-        # 单文件兜底：_MEIPASS
+        dirs.append(("dir", os.path.join(exe_dir, "_internal")))
         meipass = getattr(sys, "_MEIPASS", None)
         if meipass:
             dirs.append(("dir", meipass))
     else:
-        # 开发环境：脚本目录
         dirs.append(("dir", os.path.dirname(os.path.abspath(__file__))))
 
     return dirs
@@ -173,16 +292,14 @@ def _get_search_dirs():
 def _load_loader():
     search = _get_search_dirs()
 
-    # 1) 先尝试环境变量指定的完整路径
     for kind, p in search:
         if kind != "file":
             continue
         try:
             return ctypes.WinDLL(p)
-        except OSError as e:
-            last_err = e
+        except OSError:
+            pass
 
-    # 2) 再按目录查找
     last_err = None
     tried = []
     for kind, d in search:
@@ -194,8 +311,6 @@ def _load_loader():
         if not os.path.isfile(dll_path):
             continue
 
-        # ★ 关键：把 DLL 所在目录加入 DLL 搜索路径，
-        #    这样 WebView2Loader 自己的依赖（VC 运行时等）也能被找到
         try:
             os.add_dll_directory(d)
         except (AttributeError, OSError):
@@ -206,7 +321,6 @@ def _load_loader():
         except OSError as e:
             last_err = e
 
-    # 3) 最后让系统 PATH 兜底
     try:
         return ctypes.WinDLL("WebView2Loader.dll")
     except OSError as e:
@@ -214,11 +328,7 @@ def _load_loader():
 
     raise OSError(
         "无法加载 WebView2Loader.dll。\n"
-        "已尝试的路径：\n  " + "\n  ".join(tried) + "\n"
-        "请确认：\n"
-        "  1) WebView2Loader.dll 与 exe 在同一目录\n"
-        "  2) DLL 位数与 Python/exe 一致（x64 vs x86）\n"
-        "  3) 系统已安装 WebView2 Runtime\n"
+        "已尝试：\n  " + "\n  ".join(tried) + "\n"
         f"最后错误：{last_err}"
     )
 
@@ -238,7 +348,7 @@ CreateCoreWebView2EnvironmentWithOptions.argtypes = [
 
 
 # ============================================================
-# Callback
+# Callbacks
 # ============================================================
 
 class EnvironmentCompleted(COMObject):
@@ -252,33 +362,27 @@ class EnvironmentCompleted(COMObject):
         try:
             if self.webview._destroyed:
                 return 0
-
             if errorCode:
                 print(f"[WebView2] Environment failed: 0x{errorCode & 0xFFFFFFFF:08X}")
                 self.webview._on_error(f"Environment failed: 0x{errorCode & 0xFFFFFFFF:08X}")
                 return 0
-
             if not createdEnvironment:
-                print("[WebView2] Environment is None")
                 return 0
 
             environment = createdEnvironment.QueryInterface(ICoreWebView2Environment)
             self.webview._environment = environment
 
             self.webview._controller_handler = ControllerCompleted(self.webview)
-
             hr = environment.CreateCoreWebView2Controller(
                 self.webview.hwnd,
                 self.webview._controller_handler,
             )
             if hr < 0:
                 print(f"[WebView2] CreateCoreWebView2Controller failed: 0x{hr & 0xFFFFFFFF:08X}")
-                self.webview._on_error(f"CreateController failed: 0x{hr & 0xFFFFFFFF:08X}")
             return 0
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
-            self.webview._on_error(str(e))
             return 0
 
 
@@ -293,39 +397,32 @@ class ControllerCompleted(COMObject):
         try:
             if self.webview._destroyed:
                 return 0
-
             if errorCode:
                 print(f"[WebView2] Controller failed: 0x{errorCode & 0xFFFFFFFF:08X}")
-                self.webview._on_error(f"Controller failed: 0x{errorCode & 0xFFFFFFFF:08X}")
                 return 0
-
             if not createdController:
-                print("[WebView2] Controller is None")
                 return 0
 
             controller = createdController.QueryInterface(ICoreWebView2Controller)
             self.webview._controller = controller
 
-            # ★★★ 修复点：get_CoreWebView2 是 ["out"] 参数的方法，
-            #     comtypes 会把 out 参数作为返回值返回，
-            #     所以不能传 byref，直接接收返回值即可。
             core_ptr = controller.get_CoreWebView2()
-
             if not core_ptr:
                 print("[WebView2] CoreWebView2 is None")
-                self.webview._on_error("CoreWebView2 is None")
                 return 0
 
             self.webview._webview = core_ptr.QueryInterface(ICoreWebView2)
 
-            # 显示 + 设置 bounds
-            hr = controller.put_IsVisible(True)
-            if hr < 0:
-                print(f"[WebView2] put_IsVisible failed: 0x{hr & 0xFFFFFFFF:08X}")
-
+            controller.put_IsVisible(True)
             self.webview._resize()
 
-            # 处理提前调用的 navigate
+            # ★ 注册 JS 消息事件（必须在 CoreWebView2 就绪后）
+            self.webview._message_handler = WebMessageReceivedHandler(self.webview)
+            token = self.webview._webview.add_WebMessageReceived(
+                self.webview._message_handler
+            )
+            self.webview._web_message_token = token
+
             if self.webview._pending_url:
                 url = self.webview._pending_url
                 self.webview._pending_url = None
@@ -333,7 +430,6 @@ class ControllerCompleted(COMObject):
 
             self.webview._ready = True
 
-            # 触发 ready 回调
             if self.webview._on_ready_cb:
                 try:
                     self.webview._on_ready_cb()
@@ -342,11 +438,50 @@ class ControllerCompleted(COMObject):
                     traceback.print_exc()
 
             return 0
-        except Exception as e:
+        except Exception:
             import traceback
             traceback.print_exc()
-            self.webview._on_error(str(e))
             return 0
+
+
+class WebMessageReceivedHandler(COMObject):
+    _com_interfaces_ = [ICoreWebView2WebMessageReceivedEventHandler]
+
+    def __init__(self, webview):
+        super().__init__()
+        self.webview = webview
+
+    def Invoke(self, sender, args):
+        try:
+            if args is None:
+                return 0
+            raw = args.get_WebMessageAsJson()
+            self.webview._dispatch_message(raw)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+        return 0
+
+
+class ExecuteScriptCompletedHandler(COMObject):
+    _com_interfaces_ = [ICoreWebView2ExecuteScriptCompletedHandler]
+
+    def __init__(self, callback):
+        super().__init__()
+        self.callback = callback
+
+    def Invoke(self, errorCode, resultObjectAsJson):
+        try:
+            if self.callback is None:
+                return 0
+            if errorCode:
+                self.callback(None, f"0x{errorCode & 0xFFFFFFFF:08X}")
+            else:
+                self.callback(resultObjectAsJson, None)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+        return 0
 
 
 # ============================================================
@@ -354,15 +489,17 @@ class ControllerCompleted(COMObject):
 # ============================================================
 
 class WebView2:
-    def __init__(self, hwnd, on_ready=None, on_error=None):
+    def __init__(self, hwnd, *, on_ready=None, on_error=None, on_message=None):
         """
         :param hwnd: 父窗口 HWND
-        :param on_ready: WebView2 准备就绪后的回调（在主线程消息循环中被调用）
-        :param on_error: 出错回调，接收错误信息字符串
+        :param on_ready: 无参回调，WebView2 就绪时触发
+        :param on_error: 单参回调，接收错误字符串
+        :param on_message: 单参回调，接收 JS postMessage 发来的数据（已 JSON 解析）
         """
         self.hwnd = hwnd
         self._on_ready_cb = on_ready
         self._on_error_cb = on_error
+        self._on_message_cb = on_message
 
         self._environment = None
         self._controller = None
@@ -370,6 +507,9 @@ class WebView2:
 
         self._environment_handler = None
         self._controller_handler = None
+        self._message_handler = None
+        self._web_message_token = None
+        self._script_handlers = []
 
         self._initialized = False
         self._ready = False
@@ -387,12 +527,10 @@ class WebView2:
         self._destroyed = False
         self._ready = False
 
-        # 确保 COM 已初始化（STA，配合 Win32 消息循环）
         try:
             comtypes.CoInitialize()
             self._com_initialized = True
         except OSError:
-            # 已经初始化过（RPC_E_CHANGED_MODE 等），忽略
             pass
 
         self._environment_handler = EnvironmentCompleted(self)
@@ -404,8 +542,7 @@ class WebView2:
         if hr < 0:
             raise OSError(
                 f"CreateCoreWebView2EnvironmentWithOptions failed: "
-                f"0x{hr & 0xFFFFFFFF:08X}\n"
-                f"请检查 WebView2 Runtime 是否已安装。"
+                f"0x{hr & 0xFFFFFFFF:08X}"
             )
 
         self._initialized = True
@@ -419,6 +556,15 @@ class WebView2:
         self._ready = False
         self._pending_url = None
 
+        if self._webview and self._web_message_token is not None:
+            try:
+                self._webview.remove_WebMessageReceived(self._web_message_token)
+            except Exception:
+                pass
+        self._web_message_token = None
+        self._message_handler = None
+        self._script_handlers = []
+
         if self._controller:
             try:
                 self._controller.Close()
@@ -431,27 +577,20 @@ class WebView2:
         self._controller_handler = None
         self._environment_handler = None
 
-        # 注意：不要在 destroy 里 CoUninitialize，
-        # 因为 Win32 消息循环可能还在跑。
-
     # ---------- 导航 ----------
 
     def navigate(self, url: str):
         if self._destroyed:
             return False
-
-        # WebView2 创建是异步的，如果还没就绪先缓存
         if self._webview is None:
             self._pending_url = url
             return True
-
         return self._navigate(url)
 
     def _navigate(self, url: str):
         if self._webview is None:
             self._pending_url = url
             return True
-
         hr = self._webview.Navigate(url)
         if hr < 0:
             raise OSError(f"Navigate failed: 0x{hr & 0xFFFFFFFF:08X}")
@@ -473,17 +612,62 @@ class WebView2:
     def _resize(self):
         if self._controller is None:
             return
-
         rect = wintypes.RECT()
         user32.GetClientRect(self.hwnd, ctypes.byref(rect))
-
-        # 忽略 0 尺寸（窗口尚未布局时）
         if rect.right <= 0 or rect.bottom <= 0:
             return
-
         hr = self._controller.put_Bounds(ctypes.byref(rect))
         if hr < 0:
             print(f"[WebView2] put_Bounds failed: 0x{hr & 0xFFFFFFFF:08X}")
+
+    # ---------- JS 通信 ----------
+
+    def _dispatch_message(self, raw):
+        if self._on_message_cb is None:
+            return
+        import json
+        data = raw
+        if raw is not None:
+            try:
+                data = json.loads(raw)
+            except (ValueError, TypeError):
+                data = raw
+        try:
+            self._on_message_cb(data)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
+    def post_json(self, obj):
+        """发 JSON 消息给 JS。event.data 是对象。"""
+        if self._webview is None:
+            return False
+        import json
+        text = json.dumps(obj, ensure_ascii=False)
+        return self._webview.PostWebMessageAsJson(text) >= 0
+
+    def post_string(self, s: str):
+        """发字符串消息给 JS。event.data 是字符串。"""
+        if self._webview is None:
+            return False
+        return self._webview.PostWebMessageAsString(s) >= 0
+
+    # 别名，符合 send 语义
+    send_json = post_json
+    send_string = post_string
+
+    def execute_script(self, js: str, on_result=None):
+        """
+        执行 JS。
+        :param js: JavaScript 代码
+        :param on_result: (result_json, error) 回调；成功时 error 为 None，
+                          失败时 result_json 为 None。
+        """
+        if self._webview is None:
+            return False
+        handler = ExecuteScriptCompletedHandler(on_result)
+        self._script_handlers.append(handler)
+        return self._webview.ExecuteScript(js, handler) >= 0
 
     # ---------- 属性 ----------
 
@@ -493,7 +677,6 @@ class WebView2:
 
     @property
     def core(self):
-        """返回 ICoreWebView2，未就绪时为 None。"""
         return self._webview
 
     def _on_error(self, msg):
