@@ -6,6 +6,7 @@ import sys
 
 import comtypes
 from comtypes import GUID, HRESULT, IUnknown, COMMETHOD, POINTER, COMObject
+from lib.implDll import load_dll
 
 
 # ============================================================
@@ -238,72 +239,8 @@ class ICoreWebView2(IUnknown):
                   (["in"], ctypes.c_int64, "token")),
     ]
 
-
-# ============================================================
-# WebView2Loader
-# ============================================================
-
-def _get_search_dirs():
-    dirs = []
-    env = os.environ.get("WEBVIEW2_LOADER_PATH")
-    if env:
-        dirs.append(("file", env))
-
-    if getattr(sys, "frozen", False):
-        exe_dir = os.path.dirname(sys.executable)
-        dirs.append(("dir", exe_dir))
-        dirs.append(("dir", os.path.join(exe_dir, "_internal")))
-        meipass = getattr(sys, "_MEIPASS", None)
-        if meipass:
-            dirs.append(("dir", meipass))
-    else:
-        dirs.append(("dir", os.path.dirname(os.path.abspath(__file__))))
-    return dirs
-
-
-def _load_loader():
-    search = _get_search_dirs()
-
-    for kind, p in search:
-        if kind == "file":
-            try:
-                return ctypes.WinDLL(p)
-            except OSError:
-                pass
-
-    last_err = None
-    tried = []
-    for kind, d in search:
-        if kind != "dir":
-            continue
-        dll_path = os.path.join(d, "WebView2Loader.dll")
-        tried.append(dll_path)
-        if not os.path.isfile(dll_path):
-            continue
-        try:
-            os.add_dll_directory(d)
-        except (AttributeError, OSError):
-            pass
-        try:
-            return ctypes.WinDLL(dll_path)
-        except OSError as e:
-            last_err = e
-
-    try:
-        return ctypes.WinDLL("WebView2Loader.dll")
-    except OSError as e:
-        last_err = e
-
-    raise OSError(
-        "无法加载 WebView2Loader.dll。\n"
-        "已尝试：\n  " + "\n  ".join(tried) + "\n"
-        f"最后错误：{last_err}"
-    )
-
-
-_loader = _load_loader()
-
-CreateCoreWebView2EnvironmentWithOptions = _loader.CreateCoreWebView2EnvironmentWithOptions
+_loader = load_dll("WebView2Loader.dll")
+CreateCoreWebView2EnvironmentWithOptions = (_loader.CreateCoreWebView2EnvironmentWithOptions)
 CreateCoreWebView2EnvironmentWithOptions.restype = HRESULT
 CreateCoreWebView2EnvironmentWithOptions.argtypes = [
     ctypes.c_wchar_p,
