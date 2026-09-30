@@ -6,8 +6,8 @@ from src.core.window import createWc, createWindow,enable_dpi_awareness
 from src.core.webview import WebView2
 webview = None
 
-CLASS_NAME = "PythonWin32Window"
-WINDOW_TITLE = "PythonWebView2"
+CLASS_NAME = "hkhj5"
+WINDOW_TITLE = "好看韩剧5"
 width = 900
 height = 600
 
