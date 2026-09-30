@@ -1,6 +1,21 @@
-import win32api
+import ctypes
+from ctypes import wintypes
 import win32con
 import win32gui
+import win32api
+
+# 定义 Windows 结构体用于解析 lParam
+class POINT(ctypes.Structure):
+    _fields_ = [("x", wintypes.LONG), ("y", wintypes.LONG)]
+
+class MINMAXINFO(ctypes.Structure):
+    _fields_ = [
+        ("ptReserved", POINT),
+        ("ptMaxSize", POINT),
+        ("ptMaxPosition", POINT),
+        ("ptMinTrackSize", POINT), # 最小追踪尺寸（最小宽高）
+        ("ptMaxTrackSize", POINT), # 最大追踪尺寸
+    ]
 
 from src.core.window import (
     createWc, createWindow, enable_dpi_awareness, enable_acrylic_win11,
@@ -23,6 +38,11 @@ class Application:
 
     # ---------- 窗口过程 ----------
     def wnd_proc(self, hwnd, msg, wparam, lparam):
+        if msg == win32con.WM_GETMINMAXINFO:
+            info = MINMAXINFO.from_address(lparam)
+            info.ptMinTrackSize.x = self.WIDTH
+            info.ptMinTrackSize.y = self.HEIGHT
+            return 0
         if msg == WM_HTTP_RESULT:
             self.bridge.on_http_result(wparam)
             return 0
