@@ -1,0 +1,1 @@
+& f:\python\win32\.venv\Scripts\python.exe f:/python/win32/main.py
