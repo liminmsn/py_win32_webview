@@ -69,5 +69,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='WinView2App',
+    name='hkhj5',
 )
