@@ -1,10 +1,8 @@
-﻿import ctypes
-from ctypes import wintypes
-
-import os
-import sys
-
+﻿import os
+import ctypes
 import comtypes
+
+from ctypes import wintypes
 from comtypes import GUID, HRESULT, IUnknown, COMMETHOD, POINTER, COMObject
 from lib.implDll import load_dll
 

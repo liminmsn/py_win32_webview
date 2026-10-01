@@ -1,4 +1,3 @@
-# -*- mode: python ; coding: utf-8 -*-
 import os
 
 block_cipher = None
@@ -9,7 +8,7 @@ a = Analysis(
     ['main.py'],
     pathex=[PROJECT_ROOT],
     binaries=[
-        (os.path.join(PROJECT_ROOT, 'src\core\WebView2Loader.dll'), '.'),
+        (os.path.join(PROJECT_ROOT, 'lib', '*.dll'), 'lib'),
     ],
     datas=[
         (os.path.join(PROJECT_ROOT, 'resources', 'app.ico'), 'resources'),
