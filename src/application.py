@@ -18,7 +18,7 @@ class MINMAXINFO(ctypes.Structure):
     ]
 
 from src.core.window import (
-    createWc, createWindow, enable_dpi_awareness, enable_acrylic_win11,
+    createWc, createWindow, enable_dpi_awareness, enable_acrylic_win11,get_window_prop
 )
 from src.core.webview import WebView2
 from src.bridge import Bridge, WM_HTTP_RESULT
@@ -40,8 +40,10 @@ class Application:
     def wnd_proc(self, hwnd, msg, wparam, lparam):
         if msg == win32con.WM_GETMINMAXINFO:
             info = MINMAXINFO.from_address(lparam)
-            info.ptMinTrackSize.x = self.WIDTH
-            info.ptMinTrackSize.y = self.HEIGHT
+            min_width = get_window_prop(hwnd, "MinWidth", self.WIDTH)
+            min_height = get_window_prop(hwnd, "MinHeight", self.HEIGHT)
+            info.ptMinTrackSize.x = min_width
+            info.ptMinTrackSize.y = min_height
             return 0
         if msg == WM_HTTP_RESULT:
             self.bridge.on_http_result(wparam)

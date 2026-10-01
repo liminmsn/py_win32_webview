@@ -7,6 +7,29 @@ import os
 import sys
 
 user32 = ctypes.windll.user32
+
+# SetPropW(HWND hWnd, LPCWSTR lpString, HANDLE hData)
+user32.SetPropW.argtypes = [wintypes.HWND, wintypes.LPCWSTR, wintypes.HANDLE]
+user32.SetPropW.restype = wintypes.BOOL
+# GetPropW(HWND hWnd, LPCWSTR lpString)
+user32.GetPropW.argtypes = [wintypes.HWND, wintypes.LPCWSTR]
+user32.GetPropW.restype = wintypes.HANDLE
+def set_window_prop(hwnd: int, prop_name: str, value: int) -> bool:
+    """对应 C++ 的 SetPropW(hwnd, L"...", (HANDLE)value)"""
+    # 将 int 强制转换为 HANDLE (void*) 内存指针对齐
+    handle_val = ctypes.c_void_p(value)
+    return bool(user32.SetPropW(hwnd, prop_name, handle_val))
+def get_window_prop(hwnd: int, prop_name: str, default: int = 0) -> int:
+    """对应 C++ 的 reinterpret_cast<LONG_PTR>(GetPropW(hwnd, L"..."))"""
+    handle_res = user32.GetPropW(hwnd, prop_name)
+    if handle_res is None:
+        return default
+    # 在 64 位系统上，HANDLE 返回为 int 类型的地址值，可以直接按 int 获取
+    return handle_res
+def remove_window_prop(hwnd: int, prop_name: str):
+    """清理属性数据（窗口销毁前可选调用）"""
+    return user32.RemovePropW(hwnd, prop_name)
+
 user32.LoadImageW.argtypes = [
     wintypes.HINSTANCE,
     wintypes.LPCWSTR,
@@ -189,11 +212,15 @@ def createWindow(CLASS_NAME: str, WINDOW_TITLE: str, hinstance, width=900, heigh
         CLASS_NAME,
         WINDOW_TITLE,
         win32con.WS_OVERLAPPEDWINDOW,
-        x, y, phys_w, phys_h,
+        x, 
+        y, 
+        phys_w, 
+        phys_h,
         0, 0,
         hinstance,
         None,
     )
+    
 
     ico_path = get_resource_path(os.path.join("resources", "app.ico"))
     if os.path.isfile(ico_path):
@@ -202,7 +229,8 @@ def createWindow(CLASS_NAME: str, WINDOW_TITLE: str, hinstance, width=900, heigh
         user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, _hIconBig)
     else:
         print(f"[App] 图标文件不存在：{ico_path}")
-
+    set_window_prop(hwnd, "MinWidth", phys_w)
+    set_window_prop(hwnd, "MinHeight", phys_h)
     return hwnd
 
 def createWc(CLASS_NAME: str, wnd_proc, hinstance):
