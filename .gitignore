@@ -1,4 +1,5 @@
-﻿# Python 字节码
+﻿vite-monorepo/
+# Python 字节码
 __pycache__/
 *.py[cod]
 *$py.class
