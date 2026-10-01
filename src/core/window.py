@@ -7,6 +7,29 @@ import os
 import sys
 
 user32 = ctypes.windll.user32
+
+# SetPropW(HWND hWnd, LPCWSTR lpString, HANDLE hData)
+user32.SetPropW.argtypes = [wintypes.HWND, wintypes.LPCWSTR, wintypes.HANDLE]
+user32.SetPropW.restype = wintypes.BOOL
+# GetPropW(HWND hWnd, LPCWSTR lpString)
+user32.GetPropW.argtypes = [wintypes.HWND, wintypes.LPCWSTR]
+user32.GetPropW.restype = wintypes.HANDLE
+def set_window_prop(hwnd: int, prop_name: str, value: int) -> bool:
+    """对应 C++ 的 SetPropW(hwnd, L"...", (HANDLE)value)"""
+    # 将 int 强制转换为 HANDLE (void*) 内存指针对齐
+    handle_val = ctypes.c_void_p(value)
+    return bool(user32.SetPropW(hwnd, prop_name, handle_val))
+def get_window_prop(hwnd: int, prop_name: str, default: int = 0) -> int:
+    """对应 C++ 的 reinterpret_cast<LONG_PTR>(GetPropW(hwnd, L"..."))"""
+    handle_res = user32.GetPropW(hwnd, prop_name)
+    if handle_res is None:
+        return default
+    # 在 64 位系统上，HANDLE 返回为 int 类型的地址值，可以直接按 int 获取
+    return handle_res
+def remove_window_prop(hwnd: int, prop_name: str):
+    """清理属性数据（窗口销毁前可选调用）"""
+    return user32.RemovePropW(hwnd, prop_name)
+
 user32.LoadImageW.argtypes = [
     wintypes.HINSTANCE,
     wintypes.LPCWSTR,
@@ -137,13 +160,39 @@ def _get_system_dpi():
     except Exception:
         return 96
 
+# DWM API 相关常量
+DWMWA_SYSTEMBACKDROP_TYPE = 38
+DWMSBT_TRANSIENTWINDOW = 3   # 桌面亚克力（最亮的亚克力变体）
+DWMSBT_MAINWINDOW = 2        # Mica 云母效果
+DWMSBT_TABBEDWINDOW = 4      # 标签页亚克力
 
-def createWindow(CLASS_NAME: str, WINDOW_TITLE: str, hinstance,
-                 width=900, height=600):
-    hmonitor = win32api.MonitorFromPoint(
-        (0, 0),
-        win32con.MONITOR_DEFAULTTONEAREST,
-    )
+def enable_acrylic_win11(hwnd):
+    """
+    在 Windows 11 上启用亚克力效果。
+    要求窗口本身支持 DWM 合成，且不能是全屏/无边框的弹出窗口。
+    """
+    try:
+        dwmapi = ctypes.windll.dwmapi
+        # 设置窗口背景类型为亚克力
+        value = ctypes.c_int(DWMSBT_TRANSIENTWINDOW)
+        hr = dwmapi.DwmSetWindowAttribute(
+            wintypes.HWND(hwnd),
+            ctypes.c_uint(DWMWA_SYSTEMBACKDROP_TYPE),
+            ctypes.byref(value),
+            ctypes.sizeof(value),
+        )
+        if hr == 0:
+            return True
+        else:
+            print(f"[DWM] SetWindowAttribute failed: 0x{hr & 0xFFFFFFFF:08X}")
+            return False
+    except Exception as e:
+        print(f"[DWM] acrylic error: {e}")
+        return False
+
+WS_EX_NOREDIRECTIONBITMAP = 0x00200000
+def createWindow(CLASS_NAME: str, WINDOW_TITLE: str, hinstance, width=900, height=600):
+    hmonitor = win32api.MonitorFromPoint((0, 0),win32con.MONITOR_DEFAULTTONEAREST)
     monitor = win32api.GetMonitorInfo(hmonitor)
 
     dpi = _get_monitor_dpi(hmonitor)
@@ -159,24 +208,29 @@ def createWindow(CLASS_NAME: str, WINDOW_TITLE: str, hinstance,
     y = top + (bottom - top - phys_h) // 2
 
     hwnd = win32gui.CreateWindowEx(
-        0,
+        WS_EX_NOREDIRECTIONBITMAP,
         CLASS_NAME,
         WINDOW_TITLE,
         win32con.WS_OVERLAPPEDWINDOW,
-        x, y, phys_w, phys_h,
+        x, 
+        y, 
+        phys_w, 
+        phys_h,
         0, 0,
         hinstance,
         None,
     )
+    
 
     ico_path = get_resource_path(os.path.join("resources", "app.ico"))
     if os.path.isfile(ico_path):
         _load_window_icons(ico_path)
         user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, _hIconSmall)
-        user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG,   _hIconBig)
+        user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, _hIconBig)
     else:
         print(f"[App] 图标文件不存在：{ico_path}")
-
+    set_window_prop(hwnd, "MinWidth", phys_w)
+    set_window_prop(hwnd, "MinHeight", phys_h)
     return hwnd
 
 def createWc(CLASS_NAME: str, wnd_proc, hinstance):
@@ -187,6 +241,7 @@ def createWc(CLASS_NAME: str, wnd_proc, hinstance):
     wc.lpszClassName = CLASS_NAME
     wc.lpfnWndProc = wnd_proc
     wc.hCursor = win32gui.LoadCursor(None, win32con.IDC_ARROW)
-    wc.hbrBackground = win32con.COLOR_WINDOW + 1
+    # wc.hbrBackground = win32con.COLOR_WINDOW + 1
+    wc.hbrBackground = 0
 
     return win32gui.RegisterClass(wc)
