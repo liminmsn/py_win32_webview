@@ -12,6 +12,7 @@ a = Analysis(
     ],
     datas=[
         (os.path.join(PROJECT_ROOT, 'resources', 'app.ico'), 'resources'),
+        (os.path.join(PROJECT_ROOT, 'resources', 'www'), 'resources/www'),
     ],
     hiddenimports=[
         'comtypes',
