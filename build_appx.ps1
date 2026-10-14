@@ -1,0 +1,1 @@
+& "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makeappx.exe" pack /d "F:\python\win32\appx" /p "F:\python\win32\appx\hkhj5.msix" /o
