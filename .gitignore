@@ -13,6 +13,7 @@ dist/
 venv/
 env/
 vite-monorepo/
+appx/
 
 # IDE
 .idea/
